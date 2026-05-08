@@ -2,20 +2,27 @@ import { connectToDatabase } from "@/lib/db";
 import { NextResponse } from "next/server";
 import Patient from "@/models/Patient";
 
-export async function DELETE(req: Request) {
+export async function PATCH(req: Request) {
   try {
     await connectToDatabase();
 
-    const { searchParams } = new URL(req.url); // new is a keyword to create a new object, we are creating new url object, 
-    // because req.url is a string, and URL is a class, that we can use to create a new url object
+    const { searchParams } = new URL(req.url);
 
     const id = searchParams.get("id");
 
-    const result = await Patient.findByIdAndDelete(id);
+    const updatedPatient = await Patient.findByIdAndUpdate(
+      id,
+      {
+        status: "done",
+      },
+      {
+        new: true,
+      }
+    );
 
     return NextResponse.json({
       success: true,
-      result,
+      updatedPatient,
     });
   } catch (error) {
     return NextResponse.json({
