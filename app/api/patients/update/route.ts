@@ -6,12 +6,6 @@ export async function PATCH(request: Request) {
     try {
         const body = await request.json();
 
-        const {
-            patientName,
-            patientPhone,
-            patinentReason,
-        } = body;
-
         await connectToDatabase();
 
         const { searchParams } = new URL(request.url);
@@ -19,10 +13,9 @@ export async function PATCH(request: Request) {
 
         const updatedPatient = await Patient.findByIdAndUpdate(
             id,
+            body,
             {
-                patientName,
-                patientPhone,
-                patinentReason,
+                new: true,
             }
         );
 

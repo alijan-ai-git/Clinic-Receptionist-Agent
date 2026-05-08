@@ -26,7 +26,7 @@ const patientSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["waiting", "done"],
+    enum: ["waiting", "done","processing"],
     default: "waiting",
   },
 }, { timestamps: true });

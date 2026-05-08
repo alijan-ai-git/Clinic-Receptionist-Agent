@@ -88,17 +88,54 @@ export default function DoctorDashboard() {
     router.push(`/dashboard/${doctorId}/new`);
   };
 
+  const callNextPatient = async () => {
+    // const nextPatient = patients.find((p) => p.status === "waiting");
+    // patients are already filtered by waiting and processing in the backend, so we just need to find the first one with status waiting
+    const nextPatient = patients.find((p) => p.status === "waiting"); // p is the patient object
+
+    if (!nextPatient) {
+      alert("No waiting patients");
+      return;
+    }
+
+    await fetch(`/api/patients/update?id=${nextPatient._id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        status: "processing",
+      }),
+    });
+
+    fetchPatients();
+  };
+
+  const waitingCount = patients.filter((p) => p.status === "waiting").length;
+
+  const processingCount = patients.filter(
+    (p) => p.status === "processing",
+  ).length;
   useEffect(() => {
     if (doctorId) fetchPatients();
-  }, [doctorId]);
+    // refetch patients every 5 seconds to get the updated list of patients, especially the status of waiting and processing
+    const interval = setInterval(() => {
+      if (doctorId) fetchPatients();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [doctorId]); // it should refresh after 5 seconds
 
   return (
     <div className="min-h-screen bg-black text-white p-10">
       {/* HEADER */}
       <div className="flex justify-between items-center mb-10">
-        <div>
+        <div className="">
           <h1 className="text-3xl font-bold">Doctor Dashboard</h1>
           <p className="text-zinc-400">Doctor ID: {doctorId}</p>
+          <h3 className="text-white">Total Patients: {patients.length}</h3>
+          <h3 className="text-white">Waiting: {waitingCount}</h3>
+          <h3 className="text-white">Processing: {processingCount}</h3>
         </div>
 
         <button
@@ -112,6 +149,12 @@ export default function DoctorDashboard() {
           className="bg-white text-black px-5 py-2 rounded-xl"
         >
           Add Patient
+        </button>
+        <button
+          onClick={callNextPatient}
+          className="bg-yellow-500 text-black px-5 py-2 rounded-xl"
+        >
+          Call Next Patient
         </button>
       </div>
 
@@ -140,20 +183,20 @@ export default function DoctorDashboard() {
 
               {/* ACTIONS */}
               <div className="flex gap-2 items-start">
-                <button
-                  onClick={() => markDone(p._id)}
-                  className="bg-green-600 px-4 py-2 rounded-xl"
-                >
-                  Done
-                </button>
-
+                {p.status === "processing" && (
+                  <button
+                    onClick={() => markDone(p._id)}
+                    className="bg-green-600 px-4 py-2 rounded-xl"
+                  >
+                    Done
+                  </button>
+                )}
                 <button
                   onClick={() => openEdit(p)}
                   className="bg-blue-600 px-4 py-2 rounded-xl"
                 >
                   Edit
                 </button>
-
                 <button
                   onClick={() => deletePatient(p._id)}
                   className="bg-red-600 px-4 py-2 rounded-xl"
