@@ -13,7 +13,6 @@ export async function GET(req: Request) {
 
     const patients = await Patient.find({
       doctorId,
-      status: ["waiting", "processing"],
     }).sort({ createdAt: 1 });
 
     return NextResponse.json({

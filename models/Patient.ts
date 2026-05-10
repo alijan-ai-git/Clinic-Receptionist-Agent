@@ -10,8 +10,6 @@ const patientSchema = new mongoose.Schema({
     type: String,
     required: true,
     match: /^\d{10}$/,
-    minlength: 10,
-    maxlength: 10
   },
 
   patientReason: {

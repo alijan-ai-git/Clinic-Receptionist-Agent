@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+
+interface Patient {
+  _id: string;
+  patientName: string;
+  patientPhone: string;
+  patientReason: string;
+  status: string;
+}
 
 export default function DoctorDashboard() {
   const params = useParams();
   const doctorId = params?.doctorId as string;
+
   const router = useRouter();
 
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -16,7 +24,7 @@ export default function DoctorDashboard() {
 
   const [form, setForm] = useState({
     patientName: "",
-    patientNumber: "",
+    patientPhone: "",
     patientReason: "",
   });
 
@@ -61,7 +69,7 @@ export default function DoctorDashboard() {
 
     setForm({
       patientName: patient.patientName,
-      patientNumber: patient.patientNumber,
+      patientPhone: patient.patientPhone,
       patientReason: patient.patientReason,
     });
   };
@@ -79,19 +87,18 @@ export default function DoctorDashboard() {
     });
 
     setEditingPatient(null);
+
     fetchPatients();
   };
 
+  // ---------------- NEW PATIENT PAGE ----------------
   const createPatientRoute = () => {
-    // the button is in the header and it will redirect to the new patient page
-
     router.push(`/dashboard/${doctorId}/new`);
   };
 
+  // ---------------- CALL NEXT PATIENT ----------------
   const callNextPatient = async () => {
-    // const nextPatient = patients.find((p) => p.status === "waiting");
-    // patients are already filtered by waiting and processing in the backend, so we just need to find the first one with status waiting
-    const nextPatient = patients.find((p) => p.status === "waiting"); // p is the patient object
+    const nextPatient = patients.find((p) => p.status === "waiting");
 
     if (!nextPatient) {
       alert("No waiting patients");
@@ -111,112 +118,254 @@ export default function DoctorDashboard() {
     fetchPatients();
   };
 
+  // ---------------- METRICS ----------------
   const waitingCount = patients.filter((p) => p.status === "waiting").length;
 
   const processingCount = patients.filter(
     (p) => p.status === "processing",
   ).length;
+
+  const doneCount = patients.filter((p) => p.status === "done").length;
+
+  // ---------------- AUTO REFRESH ----------------
   useEffect(() => {
-    if (doctorId) fetchPatients();
-    // refetch patients every 5 seconds to get the updated list of patients, especially the status of waiting and processing
+    if (!doctorId) return;
+
+    fetchPatients();
+
     const interval = setInterval(() => {
-      if (doctorId) fetchPatients();
-    }, 60000);
+      fetchPatients();
+    }, 1000000);
 
     return () => clearInterval(interval);
-  }, [doctorId]); // it should refresh after 5 seconds
+  }, [doctorId]);
 
   return (
-    <div className="min-h-screen bg-black text-white p-10">
+    <div className="min-h-screen bg-[#808080] text-black font-mono p-10">
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-10">
-        <div className="">
-          <h1 className="text-3xl font-bold">Doctor Dashboard</h1>
-          <p className="text-zinc-400">Doctor ID: {doctorId}</p>
-          <h3 className="text-white">Total Patients: {patients.length}</h3>
-          <h3 className="text-white">Waiting: {waitingCount}</h3>
-          <h3 className="text-white">Processing: {processingCount}</h3>
-        </div>
+      <div
+        className="
+          bg-[#c0c0c0]
+          border-4
+          border-t-white
+          border-l-white
+          border-r-black
+          border-b-black
+          p-6
+          mb-10
+          shadow-[8px_8px_0px_#000]
+        "
+      >
+        <div className="flex justify-between items-start flex-wrap gap-4">
+          <div>
+            <h1 className="text-4xl font-bold uppercase">
+              Clinic Queue Control Center
+            </h1>
 
-        <button
-          onClick={fetchPatients}
-          className="bg-white text-black px-5 py-2 rounded-xl"
-        >
-          Refresh
-        </button>
-        <button
-          onClick={createPatientRoute}
-          className="bg-white text-black px-5 py-2 rounded-xl"
-        >
-          Add Patient
-        </button>
-        <button
-          onClick={callNextPatient}
-          className="bg-yellow-500 text-black px-5 py-2 rounded-xl"
-        >
-          Call Next Patient
-        </button>
+            <p className="mt-2">Doctor ID: {doctorId}</p>
+
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <div>Total Patients: {patients.length}</div>
+
+              <div>Waiting: {waitingCount}</div>
+
+              <div>Processing: {processingCount}</div>
+
+              <div>Completed: {doneCount}</div>
+            </div>
+          </div>
+
+          {/* BUTTONS */}
+          <div className="flex gap-3 flex-wrap">
+            <button
+              onClick={fetchPatients}
+              className="
+                bg-[#c0c0c0]
+                border-2
+                border-t-white
+                border-l-white
+                border-r-black
+                border-b-black
+                px-5
+                py-2
+                font-bold
+                active:border-t-black
+                active:border-l-black
+                active:border-r-white
+                active:border-b-white
+              "
+            >
+              REFRESH
+            </button>
+
+            <button
+              onClick={createPatientRoute}
+              className="
+                bg-[#c0c0c0]
+                border-2
+                border-t-white
+                border-l-white
+                border-r-black
+                border-b-black
+                px-5
+                py-2
+                font-bold
+              "
+            >
+              REGISTER PATIENT
+            </button>
+
+            <button
+              onClick={callNextPatient}
+              className="
+                bg-[#c0c0c0]
+                border-2
+                border-t-white
+                border-l-white
+                border-r-black
+                border-b-black
+                px-5
+                py-2
+                font-bold
+              "
+            >
+              CALL NEXT
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* CONTENT */}
       {loading ? (
-        <p>Loading...</p>
+        <p className="text-xl">Loading clinic queue...</p>
       ) : (
-        <div className="space-y-4">
-          {patients.map((p, index) => (
-            <div
-              key={p._id}
-              className="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 flex justify-between"
-            >
-              {/* LEFT */}
-              <div>
-                <p className="text-sm text-zinc-500">#{index + 1}</p>
+        <div className="space-y-5">
+          {patients.map((p, index) => {
+            if (p.status !== "waiting" && p.status !== "processing") {
+              return null;
+            }
 
-                <h2 className="text-xl font-semibold">{p.patientName}</h2>
+            return (
+              <div
+                key={p._id}
+                className="
+                  bg-[#d6d3ce]
+                  border-4
+                  border-t-white
+                  border-l-white
+                  border-r-black
+                  border-b-black
+                  p-5
+                  flex
+                  justify-between
+                  items-start
+                  shadow-[6px_6px_0px_#000]
+                "
+              >
+                {/* LEFT */}
+                <div>
+                  <p className="text-sm uppercase">
+                    Queue Position #{index + 1}
+                  </p>
 
-                <p className="text-zinc-400">{p.patientNumber}</p>
+                  <h2 className="text-3xl font-bold mt-1 uppercase">
+                    {p.patientName}
+                  </h2>
 
-                <p className="text-zinc-300">{p.patientReason}</p>
+                  <p className="mt-2">Number: {p.patientPhone}</p>
 
-                <p className="text-yellow-400 mt-2">{p.status}</p>
-              </div>
+                  <p>Reason: {p.patientReason}</p>
 
-              {/* ACTIONS */}
-              <div className="flex gap-2 items-start">
-                {p.status === "processing" && (
+                  <p className="mt-3 font-bold uppercase">Status: {p.status}</p>
+                </div>
+
+                {/* ACTIONS */}
+                <div className="flex gap-3 flex-wrap">
+                  {p.status === "processing" && (
+                    <button
+                      onClick={() => markDone(p._id)}
+                      className="
+                        bg-[#c0c0c0]
+                        border-2
+                        border-t-white
+                        border-l-white
+                        border-r-black
+                        border-b-black
+                        px-4
+                        py-2
+                        font-bold
+                      "
+                    >
+                      DONE
+                    </button>
+                  )}
+
                   <button
-                    onClick={() => markDone(p._id)}
-                    className="bg-green-600 px-4 py-2 rounded-xl"
+                    onClick={() => openEdit(p)}
+                    className="
+                      bg-[#c0c0c0]
+                      border-2
+                      border-t-white
+                      border-l-white
+                      border-r-black
+                      border-b-black
+                      px-4
+                      py-2
+                      font-bold
+                    "
                   >
-                    Done
+                    EDIT
                   </button>
-                )}
-                <button
-                  onClick={() => openEdit(p)}
-                  className="bg-blue-600 px-4 py-2 rounded-xl"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => deletePatient(p._id)}
-                  className="bg-red-600 px-4 py-2 rounded-xl"
-                >
-                  Delete
-                </button>
+
+                  <button
+                    onClick={() => deletePatient(p._id)}
+                    className="
+                      bg-[#c0c0c0]
+                      border-2
+                      border-t-white
+                      border-l-white
+                      border-r-black
+                      border-b-black
+                      px-4
+                      py-2
+                      font-bold
+                    "
+                  >
+                    DELETE
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* ---------------- EDIT MODAL ---------------- */}
+      {/* EDIT MODAL */}
       {editingPatient && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center">
-          <div className="bg-zinc-900 p-6 rounded-2xl w-[400px] space-y-4">
-            <h2 className="text-xl font-semibold">Edit Patient</h2>
+          <div
+            className="
+              bg-[#c0c0c0]
+              border-4
+              border-t-white
+              border-l-white
+              border-r-black
+              border-b-black
+              p-6
+              w-[400px]
+              space-y-4
+            "
+          >
+            <h2 className="text-2xl font-bold uppercase">Edit Patient</h2>
 
             <input
-              className="w-full p-2 rounded bg-zinc-800"
+              className="
+                w-full
+                p-2
+                bg-white
+                border-2
+                border-black
+              "
               value={form.patientName}
               onChange={(e) =>
                 setForm({
@@ -224,11 +373,17 @@ export default function DoctorDashboard() {
                   patientName: e.target.value,
                 })
               }
-              placeholder="Name"
+              placeholder="Patient Name"
             />
 
             <input
-              className="w-full p-2 rounded bg-zinc-800"
+              className="
+                w-full
+                p-2
+                bg-white
+                border-2
+                border-black
+              "
               value={form.patientNumber}
               onChange={(e) =>
                 setForm({
@@ -236,11 +391,17 @@ export default function DoctorDashboard() {
                   patientNumber: e.target.value,
                 })
               }
-              placeholder="Number"
+              placeholder="Patient Number"
             />
 
             <input
-              className="w-full p-2 rounded bg-zinc-800"
+              className="
+                w-full
+                p-2
+                bg-white
+                border-2
+                border-black
+              "
               value={form.patientReason}
               onChange={(e) =>
                 setForm({
@@ -251,19 +412,39 @@ export default function DoctorDashboard() {
               placeholder="Reason"
             />
 
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={updatePatient}
-                className="bg-green-600 px-4 py-2 rounded-xl"
+                className="
+                  bg-[#c0c0c0]
+                  border-2
+                  border-t-white
+                  border-l-white
+                  border-r-black
+                  border-b-black
+                  px-5
+                  py-2
+                  font-bold
+                "
               >
-                Save
+                SAVE
               </button>
 
               <button
                 onClick={() => setEditingPatient(null)}
-                className="bg-red-600 px-4 py-2 rounded-xl"
+                className="
+                  bg-[#c0c0c0]
+                  border-2
+                  border-t-white
+                  border-l-white
+                  border-r-black
+                  border-b-black
+                  px-5
+                  py-2
+                  font-bold
+                "
               >
-                Cancel
+                CANCEL
               </button>
             </div>
           </div>
